@@ -163,6 +163,12 @@ def create_tech_tree_html():
             stroke-width: 2px;
             marker-end: url(#arrowhead);
         }}
+        .links line.highlight-path {{
+            stroke: #ff7f0e; /* A vibrant color for highlighted links */
+            stroke-width: 4px;
+            stroke-opacity: 1;
+            marker-end: url(#arrowhead-highlight);
+        }}
         .nodes circle {{
             stroke: #fff;
             stroke-width: 1.5px;
@@ -173,12 +179,21 @@ def create_tech_tree_html():
             transform: scale(1.1);
             stroke-width: 3px;
         }}
+        .nodes circle.highlight-node {{
+            stroke: #ff7f0e; /* A vibrant border for highlighted nodes */
+            stroke-width: 3px;
+            transform: scale(1.2); /* Make highlighted nodes slightly larger */
+        }}
         .nodes text {{
             font-size: 9px;
             fill: #333;
             pointer-events: none;
             user-select: none;
             font-weight: 500;
+        }}
+        .nodes text.highlight-node {{
+            font-weight: bold;
+            fill: #ff7f0e;
         }}
         .node-info {{
             position: absolute;
@@ -267,6 +282,7 @@ def create_tech_tree_html():
             <button class="nav-button" onclick="zoomOut()">🔍 Zoom Out</button>
             <button class="nav-button" onclick="resetView()">🏠 Reset View</button>
             <button class="nav-button" onclick="fitToScreen()">📐 Fit to Screen</button>
+            <button class="nav-button" onclick="clearHighlight()">❌ Clear Highlight</button>
         </div>
         <div class="graph-container" id="graph-container">
             <div id="node-info" class="node-info"></div>
@@ -327,9 +343,27 @@ def create_tech_tree_html():
             .attr("fill", "#999")
             .style("stroke", "none");
 
+        // Define highlighted arrowhead marker
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead-highlight")
+            .attr("viewBox", "-0 -5 10 10")
+            .attr("refX", 13)
+            .attr("refY", 0)
+            .attr("orient", "auto")
+            .attr("markerWidth", 8)
+            .attr("markerHeight", 8)
+            .attr("xoverflow", "visible")
+            .append("svg:path")
+            .attr("d", "M 0,-5 L 10,0 L 0,5")
+            .attr("fill", "#ff7f0e")
+            .style("stroke", "none");
+
         // Prepare data for D3
         const nodesData = tech_tree.graph.nodes;
         const linksData = [];
+        const nodeMap = new Map();
+        nodesData.forEach(node => nodeMap.set(node.id, node));
+
         tech_tree.graph.edges.forEach(edge => {{
             if (Array.isArray(edge.targets)) {{
                 edge.targets.forEach(target => {{
@@ -339,11 +373,11 @@ def create_tech_tree_html():
                 linksData.push({{ source: edge.source, target: edge.target }});
             }}
         }});
-
+        
         // Create a force simulation
         const simulation = d3.forceSimulation(nodesData)
-            .force("link", d3.forceLink(linksData).id(d => d.id).distance(80))
-            .force("charge", d3.forceManyBody().strength(-400))
+            .force("link", d3.forceLink(linksData).id(d => d.id).distance(120))
+            .force("charge", d3.forceManyBody().strength(-500))
             .force("center", d3.forceCenter(width / 2, height / 2))
             .force("collide", d3.forceCollide(25));
 
@@ -363,7 +397,8 @@ def create_tech_tree_html():
             .call(d3.drag()
                 .on("start", dragstarted)
                 .on("drag", dragged)
-                .on("end", dragended));
+                .on("end", dragended))
+            .on("click", clickNode);
 
         node.append("circle")
             .attr("r", 8)
@@ -422,6 +457,71 @@ def create_tech_tree_html():
             node
                 .attr("transform", d => `translate(${{d.x}},${{d.y}})`);
         }});
+
+        // --- NEW PATH HIGHLIGHTING LOGIC ---
+        function findPath(startNodeId) {{
+            const pathNodes = new Set();
+            const pathLinks = new Set();
+
+            // Find dependencies (ancestors)
+            function findAncestors(nodeId) {{
+                pathNodes.add(nodeId);
+                linksData.forEach(link => {{
+                    if (link.target.id === nodeId) {{
+                        pathLinks.add(link);
+                        findAncestors(link.source.id);
+                    }}
+                }});
+            }}
+
+            // Find technologies enabled by (descendants)
+            function findDescendants(nodeId) {{
+                pathNodes.add(nodeId);
+                linksData.forEach(link => {{
+                    if (link.source.id === nodeId) {{
+                        pathLinks.add(link);
+                        findDescendants(link.target.id);
+                    }}
+                }});
+            }}
+
+            // Start traversal from the clicked node
+            findAncestors(startNodeId);
+            findDescendants(startNodeId);
+
+            return {{nodes: Array.from(pathNodes), links: Array.from(pathLinks)}};
+        }}
+        
+        // Handles the node click event
+        function clickNode(event, d) {{
+            // Clear any previous highlights
+            clearHighlight();
+
+            // Find all nodes and links in the dependency path
+            const path = findPath(d.id);
+
+            // Highlight the nodes
+            g.selectAll('.nodes g')
+                .filter(nodeData => path.nodes.includes(nodeData.id))
+                .select('circle')
+                .classed('highlight-node', true);
+            
+            g.selectAll('.nodes g')
+                .filter(nodeData => path.nodes.includes(nodeData.id))
+                .select('text')
+                .classed('highlight-node', true);
+
+            // Highlight the links
+            g.selectAll('.links line')
+                .filter(linkData => path.links.includes(linkData))
+                .classed('highlight-path', true);
+        }}
+        
+        window.clearHighlight = function() {{
+            g.selectAll('.nodes circle').classed('highlight-node', false);
+            g.selectAll('.nodes text').classed('highlight-node', false);
+            g.selectAll('.links line').classed('highlight-path', false);
+        }};
 
         // Drag functions
         function dragstarted(event, d) {{
@@ -525,7 +625,7 @@ def main():
             
             # Working navigation button inside the card
             if st.button("Open Analysis", key="yearly_btn", help="Year-by-year impact assessment with interactive heatmaps"):
-                st.switch_page("pages/1_Yearly_Analysis.py")
+                st.switch_page("pages/1_Impact_Simulation.py")
             
             st.markdown('</div>', unsafe_allow_html=True)
     
