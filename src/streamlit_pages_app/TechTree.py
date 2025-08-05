@@ -57,7 +57,7 @@ st.markdown("""
         padding: 0.8rem;
         margin: 0.5rem 0;
         text-align: center;
-        min-height: 140px;
+        min-height: 160px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -67,8 +67,9 @@ st.markdown("""
         margin-bottom: 0.5rem;
     }
     .navigation-card p {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         margin-bottom: 0.8rem;
+        line-height: 1.3;
     }
     .navigation-card .stButton > button {
         background-color: #1f77b4;
@@ -493,9 +494,9 @@ def main():
                 unsafe_allow_html=True)
     
     # Introduction
-    st.markdown("""
-    **A comprehensive analysis platform for nuclear technology R&D investment decisions combining short-term impact analysis with long-term strategic planning.**
-    """)
+    # st.markdown("""
+    # **A comprehensive analysis platform for nuclear technology R&D investment decisions combining short-term impact analysis with long-term strategic planning.**
+    # """)
     
     # Tech Tree Visualization
     st.markdown('<div class="section-header">Interactive Tech Dependency Graph</div>', 
@@ -519,7 +520,7 @@ def main():
             st.markdown('''
             <div class="navigation-card">
                 <h3>🔬 Yearly Analysis</h3>
-                <p><strong>1-year acceleration impact</strong></p>
+                <p><strong>See which technologies offer the best near-term investment opportunities</strong></p>
             ''', unsafe_allow_html=True)
             
             # Working navigation button inside the card
@@ -533,7 +534,7 @@ def main():
             st.markdown('''
             <div class="navigation-card">
                 <h3>📊 Strategic Analysis</h3>
-                <p><strong>Long-term ROI optimization</strong></p>
+                <p><strong>Identify technologies with high long-term cumulative impact</strong></p>
             ''', unsafe_allow_html=True)
             
             # Working navigation button inside the card
@@ -547,7 +548,7 @@ def main():
             st.markdown('''
             <div class="navigation-card">
                 <h3>⚡ Tech Comparison</h3>
-                <p><strong>Pathway risk-return analysis</strong></p>
+                <p><strong>Compare different nuclear pathways and their risk-return profiles</strong></p>
             ''', unsafe_allow_html=True)
             
             # Working navigation button inside the card
@@ -556,103 +557,116 @@ def main():
             
             st.markdown('</div>', unsafe_allow_html=True)
     
-    # Quick overview
-    st.markdown('<div class="section-header">Technology Portfolio Overview</div>', 
-                unsafe_allow_html=True)
+    # Technology Portfolio Overview as expandable section
+    with st.expander("📊 Technology Portfolio Overview", expanded=False):
+        # Initialize scheduler for overview
+        scheduler = NuclearScheduler(tech_tree)
+        
+        # Count technologies by type
+        fusion_count = len([n for n in scheduler.nodes.values() if n.get('category') == 'Fusion'])
+        fission_count = len([n for n in scheduler.nodes.values() if n.get('category') == 'Fission'])
+        milestone_count = len([n for n in scheduler.nodes.values() if n.get('type') == 'Milestone'])
+        enabling_count = len([n for n in scheduler.nodes.values() if n.get('type') == 'EnablingTechnology'])
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Fusion Technologies", fusion_count)
+        with col2:
+            st.metric("Fission Technologies", fission_count)
+        with col3:
+            st.metric("Key Milestones", milestone_count)
+        with col4:
+            st.metric("Enabling Technologies", enabling_count)
+        
+        # Technology distribution chart
+        tech_data = {
+            'Technology Type': ['Fusion Concepts', 'Fission Concepts', 'Milestones', 'Enabling Technologies'],
+            'Count': [fusion_count, fission_count, milestone_count, enabling_count]
+        }
+        
+        df_tech = pd.DataFrame(tech_data)
+        
+        fig = px.bar(df_tech, x='Technology Type', y='Count',
+                     title='Nuclear Technology Portfolio Composition',
+                     color='Technology Type',
+                     color_discrete_sequence=['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'])
+        
+        fig.update_layout(height=400, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
     
-    # Initialize scheduler for overview
-    scheduler = NuclearScheduler(tech_tree)
+    # Key features as expandable section
+    with st.expander("🔧 Key Features", expanded=False):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+            st.markdown("### Advanced Modeling")
+            st.markdown("""
+            - **Critical Path Analysis**: Identifies bottleneck technologies
+            - **TRL-based Risk Assessment**: Success probabilities based on technology readiness
+            - **Dependency Mapping**: Models technology interdependencies
+            - **NPV Calculations**: Discounted cash flow analysis for energy benefits
+            """)
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+            st.markdown("### Interactive Analysis")
+            st.markdown("""
+            - **Configurable Parameters**: Adjust discount rates, timelines, and assumptions
+            - **Dynamic Filtering**: Focus on specific technology types or timeframes
+            - **Scenario Modeling**: Compare baseline vs accelerated development paths
+            - **Visual Analytics**: Interactive charts and heatmaps
+            """)
+            st.markdown('</div>', unsafe_allow_html=True)
     
-    # Count technologies by type
-    fusion_count = len([n for n in scheduler.nodes.values() if n.get('category') == 'Fusion'])
-    fission_count = len([n for n in scheduler.nodes.values() if n.get('category') == 'Fission'])
-    milestone_count = len([n for n in scheduler.nodes.values() if n.get('type') == 'Milestone'])
-    enabling_count = len([n for n in scheduler.nodes.values() if n.get('type') == 'EnablingTechnology'])
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Fusion Technologies", fusion_count)
-    with col2:
-        st.metric("Fission Technologies", fission_count)
-    with col3:
-        st.metric("Key Milestones", milestone_count)
-    with col4:
-        st.metric("Enabling Technologies", enabling_count)
-    
-    # Technology distribution chart
-    tech_data = {
-        'Technology Type': ['Fusion Concepts', 'Fission Concepts', 'Milestones', 'Enabling Technologies'],
-        'Count': [fusion_count, fission_count, milestone_count, enabling_count]
-    }
-    
-    df_tech = pd.DataFrame(tech_data)
-    
-    fig = px.bar(df_tech, x='Technology Type', y='Count',
-                 title='Nuclear Technology Portfolio Composition',
-                 color='Technology Type',
-                 color_discrete_sequence=['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'])
-    
-    fig.update_layout(height=400, showlegend=False)
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Key features
-    st.markdown('<div class="section-header">Key Features</div>', 
-                unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.markdown("### Advanced Modeling")
+    # Methodology overview as expandable section
+    with st.expander("📋 Methodology", expanded=False):
+        st.markdown('<div class="info-card">', unsafe_allow_html=True)
         st.markdown("""
-        - **Critical Path Analysis**: Identifies bottleneck technologies
-        - **TRL-based Risk Assessment**: Success probabilities based on technology readiness
-        - **Dependency Mapping**: Models technology interdependencies
-        - **NPV Calculations**: Discounted cash flow analysis for energy benefits
+        ### Analysis Framework
+        
+        **1. Technology Readiness Assessment**
+        - Current TRL (Technology Readiness Level) evaluation
+        - Success probability mapping based on historical data
+        - Time-to-deployment estimates using industry benchmarks
+        
+        **2. Impact Calculation**
+        - Energy production potential (TWh over plant lifetime)
+        - Net present value analysis with configurable discount rates
+        - Compound effect modeling for strategic technologies
+        
+        **3. Risk Analysis**
+        - Technology development risk assessment
+        - Market deployment probability calculations
+        - Portfolio risk diversification analysis
+        
+        **4. Investment Optimization**
+        - ROI multiple calculations
+        - Short-term vs long-term impact comparison
+        - Strategic pathway identification
         """)
         st.markdown('</div>', unsafe_allow_html=True)
     
-    with col2:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.markdown("### Interactive Analysis")
+    # Configuration tips
+    with st.expander("⚙️ Configuration Tips", expanded=False):
         st.markdown("""
-        - **Configurable Parameters**: Adjust discount rates, timelines, and assumptions
-        - **Dynamic Filtering**: Focus on specific technology types or timeframes
-        - **Scenario Modeling**: Compare baseline vs accelerated development paths
-        - **Visual Analytics**: Interactive charts and heatmaps
+        ### How to Use This Platform
+        
+        **Navigation**: Use the analysis module buttons above to access different analytical views
+        
+        **Customization**: 
+        - Adjust simulation parameters in the sidebar of each page
+        - Use filters to focus on specific technology categories
+        - Compare different scenarios by changing discount rates and timelines
+        - Export data using the download buttons (where available)
+        
+        **Best Practices**:
+        - Start with Yearly Analysis for immediate insights
+        - Use Strategic Analysis for long-term planning
+        - Compare pathways in Technology Comparison for risk assessment
         """)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Methodology overview
-    st.markdown('<div class="section-header">Methodology</div>', 
-                unsafe_allow_html=True)
-    
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("""
-    ### Analysis Framework
-    
-    **1. Technology Readiness Assessment**
-    - Current TRL (Technology Readiness Level) evaluation
-    - Success probability mapping based on historical data
-    - Time-to-deployment estimates using industry benchmarks
-    
-    **2. Impact Calculation**
-    - Energy production potential (TWh over plant lifetime)
-    - Net present value analysis with configurable discount rates
-    - Compound effect modeling for strategic technologies
-    
-    **3. Risk Analysis**
-    - Technology development risk assessment
-    - Market deployment probability calculations
-    - Portfolio risk diversification analysis
-    
-    **4. Investment Optimization**
-    - ROI multiple calculations
-    - Short-term vs long-term impact comparison
-    - Strategic pathway identification
-    """)
-    st.markdown('</div>', unsafe_allow_html=True)
     
     # Data sources and assumptions
     with st.expander("Data Sources and Key Assumptions"):
@@ -676,26 +690,6 @@ def main():
         - Limited modeling of market competition effects
         - Assumes deterministic outcomes above probability thresholds
         """)
-    
-    # Getting started
-    st.markdown('<div class="section-header">Getting Started</div>', 
-                unsafe_allow_html=True)
-    
-    st.markdown("""
-    ### Quick Start Guide
-    
-    1. **For immediate impact analysis**: Use the **Yearly Analysis** button above to see which technologies offer the best near-term investment opportunities.
-    
-    2. **For strategic planning**: Use the **Strategic Analysis** button to identify technologies with high long-term cumulative impact.
-    
-    3. **For technology comparison**: Click the **Technology Comparison** button to compare different nuclear pathways and their risk-return profiles.
-    
-    ### Configuration Tips
-    - Adjust the simulation parameters in the sidebar of each page
-    - Use filters to focus on specific technology categories
-    - Compare different scenarios by changing discount rates and timelines
-    - Export data using the download buttons (where available)
-    """)
 
 if __name__ == "__main__":
     main()

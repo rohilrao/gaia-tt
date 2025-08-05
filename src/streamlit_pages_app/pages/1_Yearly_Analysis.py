@@ -1,4 +1,4 @@
-# pages/1_Yearly_Analysis.py
+# pages/1_Technology_Simulation.py
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -6,8 +6,8 @@ from utils.nuclear_scheduler import NuclearScheduler
 from utils.tech_tree_data import tech_tree
 
 st.set_page_config(
-    page_title="Yearly Analysis - Nuclear Investment Analyzer",
-    page_icon="📊",
+    page_title="Technology Simulation - Nuclear Investment Analyzer",
+    page_icon="🔬",
     layout="wide"
 )
 
@@ -41,11 +41,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header">Year-by-Year Technology Impact Analysis</div>', 
+st.markdown('<div class="main-header">Technology Acceleration Impact Simulation</div>', 
             unsafe_allow_html=True)
 
 st.markdown("""
-This analysis shows the **immediate impact** of accelerating each technology by one year 
+This simulation models the **immediate impact** of accelerating each technology by one year 
 in each specific year. The impact is measured in additional clean energy (TWh) generated 
 over the technology's lifetime.
 """)
@@ -90,12 +90,28 @@ with st.sidebar:
         step=50,
         help="Average capacity of deployed nuclear plants"
     )
+    
+    st.subheader("Display Filters")
+    min_impact = st.slider(
+        "Minimum Impact to Display (TWh)", 
+        min_value=0.0, 
+        max_value=5.0, 
+        value=0.1, 
+        step=0.1,
+        help="Filter out technologies with impact below this threshold"
+    )
+    
+    show_all_techs = st.checkbox(
+        "Show All Technologies", 
+        value=False,
+        help="Show all technologies or limit to top 15 by maximum impact"
+    )
 
 # Initialize scheduler
 scheduler = NuclearScheduler(tech_tree)
 
 # Run simulation
-with st.spinner("Running year-by-year simulation..."):
+with st.spinner("Running technology acceleration simulation..."):
     impact_data, status_data = scheduler.run_simulation(years_to_simulate=simulation_years)
 
 # Create metrics
@@ -119,8 +135,8 @@ with col4:
     st.metric(f"Investment Opportunities in {current_year}", current_opportunities)
 
 # Heatmap visualization
-st.markdown('<div class="section-header">Technology Impact Heatmap</div>', 
-            unsafe_allow_html=True)
+#st.markdown('<div class="section-header">Technology Impact Heatmap</div>', 
+#            unsafe_allow_html=True)
 
 # Prepare heatmap data
 heatmap_data = []
@@ -131,14 +147,7 @@ for tech, yearly_impact in impact_data.items():
 if heatmap_data:
     df = pd.DataFrame(heatmap_data, columns=['Technology', 'Year', 'Impact (TWh)'])
     
-    # Filter options
-    col1, col2 = st.columns(2)
-    with col1:
-        min_impact = st.slider("Minimum Impact to Display (TWh)", 0.0, 5.0, 0.1, 0.1)
-    with col2:
-        show_all_techs = st.checkbox("Show All Technologies", value=False)
-    
-    # Filter data
+    # Filter data using sidebar parameters
     filtered_df = df[df['Impact (TWh)'] >= min_impact]
     
     if not show_all_techs and len(filtered_df) > 0:
@@ -204,7 +213,7 @@ if heatmap_data:
             else:
                 st.info(f"No investment opportunities with positive impact in {selected_year}")
     else:
-        st.warning("No technologies meet the minimum impact threshold. Try lowering the minimum impact filter.")
+        st.warning("No technologies meet the minimum impact threshold. Try lowering the minimum impact filter in the sidebar.")
 else:
     st.error("No simulation data generated. Please check the configuration.")
 
@@ -260,7 +269,7 @@ st.markdown('<div class="section-header">Key Insights</div>',
             unsafe_allow_html=True)
 
 st.markdown("""
-**Understanding the Results:**
+**Understanding the Simulation Results:**
 
 1. **Active Technologies**: These are ready for acceleration investment and show immediate impact when funded.
 
@@ -269,4 +278,6 @@ st.markdown("""
 3. **Impact Timing**: The heatmap shows when each technology investment would have maximum impact - this varies based on technology readiness and market conditions.
 
 4. **Investment Strategy**: Focus on technologies that are currently active and show high impact values in near-term years for immediate returns.
+
+5. **Simulation Parameters**: Adjust the sidebar parameters to explore different scenarios and time horizons.
 """)
