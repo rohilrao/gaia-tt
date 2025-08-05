@@ -1,2 +1,5 @@
 *gaia-tt/*
 gaia-tt/*/
+*cpython*
+*.pyc*
+src/streamlit_app/utils/__pycache__/nuclear_scheduler.cpython-312.pyc
