@@ -302,8 +302,9 @@ def main() -> None:
     # Initialise the chat session on first load.  The Gen AI SDK caches chat
     # history in the Chat object, so repeated send_message calls will build
     # Streamlit's session_state to persist across reruns.
+    import os
     if "simulation_chat" not in st.session_state:
-        client = genai.Client(api_key="AIzaSyA7s56cYDO0bJOEBvAhpVILvvrbLV2spl4")  # use API key from environment or config
+        client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))  # use API key from environment or config
         chat_config = types.GenerateContentConfig(
             system_instruction=system_instruction,
             temperature=0.2,
