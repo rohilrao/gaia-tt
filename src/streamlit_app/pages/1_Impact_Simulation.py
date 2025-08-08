@@ -318,34 +318,45 @@ def main() -> None:
 
     
 
+    # Initialize messages list first, regardless of chat initialization
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
     # Initialise the chat session on first load.  The Gen AI SDK caches chat
     # history in the Chat object, so repeated send_message calls will build
     # Streamlit's session_state to persist across reruns.
     import os
     if "simulation_chat" not in st.session_state:
-        client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))  # use API key from environment or config
-        chat_config = types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            temperature=0.3,
-            max_output_tokens=1024,
-        )
-        st.session_state.simulation_chat = client.chats.create(
-            model="gemini-2.0-flash-001",  # choose a fast, cost‑effective model
-            config=chat_config,
-        )
-        # Issue an initial prompt requesting a brief summary
-        init_prompt = (
-            "Provide a concise summary of the simulation results and give examples "
-            "of the types of questions you can answer about this data."
-        )
-        initial_text = ""
-        for chunk in st.session_state.simulation_chat.send_message_stream(init_prompt):
-            # accumulate chunk.text from streaming responses
-            initial_text += chunk.text
-        # Save assistant's first message in history
-        st.session_state.messages = [
-            {"role": "assistant", "content": initial_text},
-        ]
+        try:
+            client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))  # use API key from environment or config
+            chat_config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.3,
+                max_output_tokens=1024,
+            )
+            st.session_state.simulation_chat = client.chats.create(
+                model="gemini-2.0-flash-001",  # choose a fast, cost‑effective model
+                config=chat_config,
+            )
+            # Issue an initial prompt requesting a brief summary
+            init_prompt = (
+                "Provide a concise summary of the simulation results and give examples "
+                "of the types of questions you can answer about this data."
+            )
+            initial_text = ""
+            for chunk in st.session_state.simulation_chat.send_message_stream(init_prompt):
+                # accumulate chunk.text from streaming responses
+                initial_text += chunk.text
+            # Save assistant's first message in history
+            st.session_state.messages = [
+                {"role": "assistant", "content": initial_text},
+            ]
+        except Exception as e:
+            st.error(f"Failed to initialize chat assistant: {str(e)}")
+            st.info("You can still use the simulation dashboard above. The chat feature requires a valid GENAI_API_KEY environment variable.")
+            # Ensure messages is still initialized even if chat fails
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
 
     # Display chat history
     for message in st.session_state.get("messages", []):
@@ -355,21 +366,32 @@ def main() -> None:
     # Chat input for user
     user_input = st.chat_input("Ask about the simulation results, investment strategies, or technology trends...")
     if user_input:
+        # Check if chat is properly initialized before proceeding
+        if "simulation_chat" not in st.session_state:
+            st.error("Chat assistant is not available. Please check your API configuration.")
+            return
+            
         # Append user's message to history
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.markdown(user_input)
+            
         # Send message to Gemini and stream response
-        response_text = ""
-        with st.chat_message("assistant"):
-            response_placeholder = st.empty()
-            for chunk in st.session_state.simulation_chat.send_message_stream(user_input):
-                response_text += chunk.text
-                # progressively update the message display
-                response_placeholder.markdown(response_text)
-        # Append assistant's response to history
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
-
+        try:
+            response_text = ""
+            with st.chat_message("assistant"):
+                response_placeholder = st.empty()
+                for chunk in st.session_state.simulation_chat.send_message_stream(user_input):
+                    response_text += chunk.text
+                    # progressively update the message display
+                    response_placeholder.markdown(response_text)
+            # Append assistant's response to history
+            st.session_state.messages.append({"role": "assistant", "content": response_text})
+        except Exception as e:
+            st.error(f"Error communicating with chat assistant: {str(e)}")
+            # Remove the user message if the response failed
+            if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+                st.session_state.messages.pop()
 
 if __name__ == "__main__":
     main()
