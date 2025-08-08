@@ -619,8 +619,8 @@ def main():
         with st.container():
             st.markdown('''
             <div class="navigation-card">
-                <h3>🔬 Yearly Analysis</h3>
-                <p><strong>See which technologies offer the best near-term investment opportunities</strong></p>
+                <h3>🔬 Impact Simulation</h3>
+                <p><strong>See which technologies offer the best investment opportunities by year</strong></p>
             ''', unsafe_allow_html=True)
             
             # Working navigation button inside the card
@@ -630,33 +630,11 @@ def main():
             st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        with st.container():
-            st.markdown('''
-            <div class="navigation-card">
-                <h3>📊 Strategic Analysis</h3>
-                <p><strong>Identify technologies with high long-term cumulative impact</strong></p>
-            ''', unsafe_allow_html=True)
-            
-            # Working navigation button inside the card
-            if st.button("Open Strategy", key="strategic_btn", help="Calculate compound effects and ROI multiples over decades"):
-                st.switch_page("pages/2_Strategic_Analysis.py")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height: 160px;"></div>', unsafe_allow_html=True)
     
     with col3:
-        with st.container():
-            st.markdown('''
-            <div class="navigation-card">
-                <h3>⚡ Tech Comparison</h3>
-                <p><strong>Compare different nuclear pathways and their risk-return profiles</strong></p>
-            ''', unsafe_allow_html=True)
-            
-            # Working navigation button inside the card
-            if st.button("Open Comparison", key="comparison_btn", help="Risk-return analysis across fusion and fission options"):
-                st.switch_page("pages/3_Technology_Comparison.py")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-    
+        st.markdown('<div style="height: 160px;"></div>', unsafe_allow_html=True)
+
     # Technology Portfolio Overview as expandable section
     with st.expander("📊 Technology Portfolio Overview", expanded=False):
         # Initialize scheduler for overview
@@ -700,95 +678,72 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-            st.markdown("### Advanced Modeling")
             st.markdown("""
-            - **Critical Path Analysis**: Identifies bottleneck technologies
-            - **TRL-based Risk Assessment**: Success probabilities based on technology readiness
+            <div class="feature-box">
+            
+            ### Technology Modeling
+            - **Impact Assessment**: Measures additional clean energy (TWh) from technology acceleration
+            - **TRL-based Analysis**: Technology readiness levels inform deployment timelines
             - **Dependency Mapping**: Models technology interdependencies
-            - **NPV Calculations**: Discounted cash flow analysis for energy benefits
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            
+            </div>
+            """, unsafe_allow_html=True)
         
         with col2:
-            st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-            st.markdown("### Interactive Analysis")
             st.markdown("""
-            - **Configurable Parameters**: Adjust discount rates, timelines, and assumptions
-            - **Dynamic Filtering**: Focus on specific technology types or timeframes
-            - **Scenario Modeling**: Compare baseline vs accelerated development paths
-            - **Visual Analytics**: Interactive charts and heatmaps
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+            <div class="feature-box">
+            
+            ### Interactive Visualization
+            - **Dynamic Heatmaps**: Year-by-year impact visualization
+            - **Configurable Filters**: Focus on specific technology types or impact thresholds
+            - **Chat Assistant**: AI-powered insights and questions about simulation results
+            
+            </div>
+            """, unsafe_allow_html=True)
     
     # Methodology overview as expandable section
     with st.expander("📋 Methodology", expanded=False):
-        st.markdown('<div class="info-card">', unsafe_allow_html=True)
         st.markdown("""
+        <div class="info-card">
+        
         ### Analysis Framework
         
-        **1. Technology Readiness Assessment**
-        - Current TRL (Technology Readiness Level) evaluation
-        - Success probability mapping based on historical data
-        - Time-to-deployment estimates using industry benchmarks
+        **Impact Simulation**
+        - Models accelerating each technology by one year
+        - Calculates additional clean energy generation (TWh) over plant lifetime
+        - Uses technology readiness levels and deployment timelines
+        - Accounts for technology dependencies and prerequisites
         
-        **2. Impact Calculation**
-        - Energy production potential (TWh over plant lifetime)
-        - Net present value analysis with configurable discount rates
-        - Compound effect modeling for strategic technologies
-        
-        **3. Risk Analysis**
-        - Technology development risk assessment
-        - Market deployment probability calculations
-        - Portfolio risk diversification analysis
-        
-        **4. Investment Optimization**
-        - ROI multiple calculations
-        - Short-term vs long-term impact comparison
-        - Strategic pathway identification
-        """)
-        st.markdown('</div>', unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
     
     # Configuration tips
     with st.expander("⚙️ Configuration Tips", expanded=False):
         st.markdown("""
         ### How to Use This Platform
         
-        **Navigation**: Use the analysis module buttons above to access different analytical views
+        **Navigation**: Click "Open Analysis" above to access the Impact Simulation
         
         **Customization**: 
-        - Adjust simulation parameters in the sidebar of each page
-        - Use filters to focus on specific technology categories
-        - Compare different scenarios by changing discount rates and timelines
-        - Export data using the download buttons (where available)
-        
-        **Best Practices**:
-        - Start with Yearly Analysis for immediate insights
-        - Use Strategic Analysis for long-term planning
-        - Compare pathways in Technology Comparison for risk assessment
+        - Adjust minimum impact threshold in the sidebar
+        - Choose different color schemes for visualization
+        - Filter technologies by impact levels
+        - Use the chat assistant for insights about results
         """)
     
     # Data sources and assumptions
-    with st.expander("Data Sources and Key Assumptions"):
+    with st.expander("Data Sources and Assumptions"):
         st.markdown("""
-        ### Data Sources
-        - Public roadmaps from major nuclear programs (ITER, private fusion companies)
-        - Academic literature on advanced reactor development
-        - Industry TRL assessments and expert evaluations
-        - Historical technology development timelines
-        
         ### Key Assumptions
-        - **Average Plant Capacity**: 1,000 MW (configurable: 300-1,500 MW)
-        - **Capacity Factor**: 90% (configurable: 70-95%)
+        - **Average Plant Capacity**: 1,000 MW
+        - **Capacity Factor**: 90%
         - **Plant Lifetime**: 60 years
-        - **Discount Rate**: 5% annually (configurable: 1-10%)
-        - **Deployment Threshold**: 70% success probability for commercial deployment
+        - **Simulation Period**: 30 years
         
-        ### Model Limitations
-        - Simplified dependency modeling (linear relationships)
-        - Does not account for policy/regulatory changes
-        - Limited modeling of market competition effects
-        - Assumes deterministic outcomes above probability thresholds
+        ### Model Focus
+        - Technology acceleration impact measurement
+        - Clean energy generation potential
+        - Year-by-year investment opportunity analysis
         """)
 
 if __name__ == "__main__":

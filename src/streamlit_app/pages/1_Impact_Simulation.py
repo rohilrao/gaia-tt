@@ -57,6 +57,20 @@ def main() -> None:
                 border: 1px solid #e9ecef;
                 margin: 1rem 0;
             }
+            .chat-suggestions {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 1.5rem;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+            }
+            .suggestion-item {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 8px;
+                padding: 0.75rem;
+                margin: 0.5rem 0;
+                border-left: 3px solid rgba(255, 255, 255, 0.3);
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -75,48 +89,9 @@ def main() -> None:
         """
     )
 
-    # Sidebar for simulation parameters
+    # Sidebar for display controls
     with st.sidebar:
-        st.header("Simulation Parameters")
-
-        simulation_years: int = st.slider(
-            "Simulation Years",
-            min_value=10,
-            max_value=50,
-            value=30,
-            help="Number of years to simulate forward",
-        )
-
-        discount_rate: float = st.slider(
-            "Discount Rate",
-            min_value=0.01,
-            max_value=0.10,
-            value=0.05,
-            step=0.01,
-            format="%.2f",
-            help="Annual discount rate for future energy benefits",
-        )
-
-        st.subheader("Model Assumptions")
-        capacity_factor: float = st.slider(
-            "Plant Capacity Factor",
-            min_value=0.70,
-            max_value=0.95,
-            value=0.90,
-            step=0.01,
-            help="Average capacity factor for nuclear plants",
-        )
-
-        avg_plant_size: int = st.slider(
-            "Average Plant Size (MW)",
-            min_value=300,
-            max_value=1500,
-            value=1000,
-            step=50,
-            help="Average capacity of deployed nuclear plants",
-        )
-
-        st.subheader("Display Filters")
+        st.header("Display Filters")
         min_impact: float = st.slider(
             "Minimum Impact to Display (TWh)",
             min_value=0.0,
@@ -132,10 +107,31 @@ def main() -> None:
             help="Show all technologies or limit to top 15 by maximum impact",
         )
 
-    # Initialize scheduler and run the simulation
+        # Color scheme selection
+        st.subheader("Visualization Options")
+        color_scheme = st.selectbox(
+            "Heatmap Color Scheme",
+            options=[
+                "plasma",
+                "turbo", 
+                "inferno",
+                "magma",
+                "cividis",
+                "blues",
+                "oranges",
+                "greens",
+                "reds",
+                "rdylgn",
+                "spectral"
+            ],
+            index=0,
+            help="Choose the color scheme for the heatmap visualization"
+        )
+
+    # Initialize scheduler and run the simulation with default 30 years
     scheduler = NuclearScheduler(tech_tree)
     with st.spinner("Running technology acceleration simulation..."):
-        impact_data, status_data = scheduler.run_simulation(years_to_simulate=simulation_years)
+        impact_data, status_data = scheduler.run_simulation(30)
 
     # Display metrics in four columns
     col1, col2, col3, col4 = st.columns(4)
@@ -192,24 +188,43 @@ def main() -> None:
                 values="Impact (TWh)",
                 fill_value=0,
             )
+            
+            # Get actual year range from the data
+            min_year, max_year = pivot_df.columns.min(), pivot_df.columns.max()
+            
             fig = go.Figure(
                 data=go.Heatmap(
                     z=pivot_df.values,
                     x=pivot_df.columns,
                     y=pivot_df.index,
-                    colorscale="Viridis",
-                    colorbar=dict(title="Impact (TWh)"),
+                    colorscale=color_scheme,
+                    colorbar=dict(
+                        title="Impact (TWh)",
+                        thickness=15,
+                        len=0.7
+                    ),
                     hoverongaps=False,
-                    hovertemplate="Year: %{x}<br>Technology: %{y}<br>Impact: %{z:.2f} TWh<extra></extra>",
+                    hovertemplate="<b>%{y}</b><br>Year: %{x}<br>Impact: %{z:.2f} TWh<extra></extra>",
                 )
             )
             fig.update_layout(
-                title="Technology Acceleration Impact by Year",
+                title={
+                    'text': f"Technology Acceleration Impact by Year",
+                    'x': 0.5,
+                    'xanchor': 'center',
+                    'font': {'size': 20, 'color': '#2c3e50'}
+                },
                 xaxis_title="Year",
                 yaxis_title="Technology",
-                height=max(400, len(pivot_df.index) * 25),
+                height=max(500, len(pivot_df.index) * 30),
                 yaxis=dict(autorange="reversed"),
-                font=dict(size=10),
+                xaxis=dict(
+                    dtick=max(1, (max_year - min_year) // 10),  # Smart tick spacing
+                    tickangle=45 if max_year - min_year > 20 else 0
+                ),
+                font=dict(size=11),
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
             )
             st.plotly_chart(fig, use_container_width=True)
 
@@ -253,7 +268,6 @@ def main() -> None:
 
     
     # --- Gemini Chat Assistant ---
-    # Remove the previous static insights and replace it with an interactive chat.
     st.markdown(
         '<div class="section-header">Interactive Simulation Chat</div>',
         unsafe_allow_html=True,
@@ -261,10 +275,7 @@ def main() -> None:
 
     # Build a detailed context string summarising the simulation for the system instruction.
     context_lines = []
-    context_lines.append(
-        f"Simulation parameters: simulation_years={simulation_years}, discount_rate={discount_rate:.2f}, "
-        f"capacity_factor={capacity_factor:.2f}, avg_plant_size={avg_plant_size} MW."
-    )
+    context_lines.append("Simulation uses 30 years with default nuclear technology parameters.")
     context_lines.append(
         f"Total technologies analysed: {total_techs}. Positive impact technologies: {active_techs}. "
         f"Maximum single‑year impact: {max_impact:.1f} TWh. Investment opportunities in {current_year}: {current_opportunities}."
@@ -280,11 +291,8 @@ def main() -> None:
     except Exception:
         # if df isn't defined due to no data
         pass
-    # Combine context lines into a single instruction
-    # Build the system instruction by concatenating strings.  Do not place a raw
-    # newline outside of quotes – instead include it inside the string or use
-    # explicit concatenation.  This avoids syntax errors when Python parses
-    # backslash‑escaped line breaks.
+
+    # Enhanced system instruction with question suggestions
     system_instruction: str = (
         "You are an expert assistant helping users understand a nuclear technology "
         "acceleration simulation. The simulation models the impact of accelerating "
@@ -292,14 +300,25 @@ def main() -> None:
         "generated over its lifetime. Use the following context when answering questions:\n"
         + "\n".join(context_lines)
         + "\n\n"
+        + "You can help users with questions such as:\n"
+        + "• Which technologies have the highest impact potential?\n"
+        + "• What are the best investment opportunities for specific years?\n"
+        + "• How do different simulation parameters affect the results?\n"
+        + "• What trends can be observed in the technology timeline?\n"
+        + "• Which technologies show consistent impact across multiple years?\n"
+        + "• What is the relationship between technology readiness and impact?\n"
+        + "• How sensitive are the results to changes in discount rate or plant parameters?\n"
+        + "• What are the key insights for strategic technology investment decisions?\n\n"
         + "Your first response should provide a concise overview summarising the "
-        "key findings of the simulation in one or two sentences. Provide more "
-        "detail only when the user asks follow‑up questions. If the question is "
-        "unrelated to the simulation, politely decline to answer and remind the "
-        "user to ask about the simulation."
+        "key findings of the simulation in 2-3 sentences, followed by examples of "
+        "questions you can answer. Provide more detail only when the user asks "
+        "follow‑up questions. If the question is unrelated to the simulation, "
+        "politely decline to answer and remind the user to ask about the simulation."
     )
 
-    # Initialise the chat session on first load.  The Gen AI SDK caches chat
+    
+
+    # Initialise the chat session on first load.  The Gen AI SDK caches chat
     # history in the Chat object, so repeated send_message calls will build
     # Streamlit's session_state to persist across reruns.
     import os
@@ -307,7 +326,7 @@ def main() -> None:
         client = genai.Client(api_key=os.getenv("GENAI_API_KEY"))  # use API key from environment or config
         chat_config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            temperature=0.2,
+            temperature=0.3,
             max_output_tokens=1024,
         )
         st.session_state.simulation_chat = client.chats.create(
@@ -316,8 +335,8 @@ def main() -> None:
         )
         # Issue an initial prompt requesting a brief summary
         init_prompt = (
-            "Provide a concise summary of the simulation results. "
-            "Do not go into detail unless asked later."
+            "Provide a concise summary of the simulation results and give examples "
+            "of the types of questions you can answer about this data."
         )
         initial_text = ""
         for chunk in st.session_state.simulation_chat.send_message_stream(init_prompt):
@@ -334,7 +353,7 @@ def main() -> None:
             st.markdown(message["content"])
 
     # Chat input for user
-    user_input = st.chat_input("Ask about the simulation…")
+    user_input = st.chat_input("Ask about the simulation results, investment strategies, or technology trends...")
     if user_input:
         # Append user's message to history
         st.session_state.messages.append({"role": "user", "content": user_input})
