@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import os
+import time
 
 # Import the scheduler and technology data
 from utils.nuclear_scheduler import NuclearScheduler
@@ -143,7 +144,7 @@ def main():
     # Page configuration
     st.set_page_config(
         page_title="Run Simulations - Nuclear Investment Analyzer",
-        page_icon="🚀",
+        page_icon="⚛️",
         layout="wide",
     )
     
@@ -196,6 +197,15 @@ def main():
                 padding: 1rem;
                 margin: 1rem 0;
             }
+            .success-notification {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #28a745;
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -220,6 +230,8 @@ def main():
         st.session_state.current_context = "No simulation has been run yet. Ask me to run a simulation!"
     if "simulation_messages" not in st.session_state:
         st.session_state.simulation_messages = []
+    if "dashboard_update_needed" not in st.session_state:
+        st.session_state.dashboard_update_needed = False
     
     # Initialize workflow
     workflow, genai_client = initialize_workflow()
@@ -269,13 +281,13 @@ def main():
         
         # Quick simulation buttons
         st.subheader("Quick Simulations")
-        if st.button("🚀 Run 30-Year Simulation", use_container_width=True):
+        if st.button("Run 30-Year Simulation", use_container_width=True):
             st.session_state.quick_simulation_request = "Run a simulation for 30 years"
         
-        if st.button("⚡ Run 20-Year Simulation", use_container_width=True):
+        if st.button("Run 20-Year Simulation", use_container_width=True):
             st.session_state.quick_simulation_request = "Run a simulation for 20 years"
         
-        if st.button("🔬 Run 40-Year Simulation", use_container_width=True):
+        if st.button("Run 40-Year Simulation", use_container_width=True):
             st.session_state.quick_simulation_request = "Run a simulation for 40 years"
     
     # Handle quick simulation requests
@@ -283,23 +295,44 @@ def main():
         user_input = st.session_state.quick_simulation_request
         del st.session_state.quick_simulation_request
         
+        # Add user message to history
+        st.session_state.simulation_messages.append({"role": "user", "content": user_input})
+        
         with st.spinner("Running simulation..."):
             result = workflow.process_user_input(user_input, st.session_state.current_context)
             
-            # Update session state
-            if result["simulation_results"]:
-                st.session_state.current_simulation_data = result["simulation_results"]
+            # Update session state and context
             st.session_state.current_context = result["context_summary"]
             
-            # Add to messages
-            st.session_state.simulation_messages.append({"role": "user", "content": user_input})
+            # Add assistant response to history
             st.session_state.simulation_messages.append({"role": "assistant", "content": result["response"]})
+            
+            # Update simulation data if available
+            if result["simulation_results"]:
+                st.session_state.current_simulation_data = result["simulation_results"]
+                st.session_state.dashboard_update_needed = True
+                # Show success notification
+                st.success("Simulation completed! Dashboard has been updated with new results.")
+                st.rerun()
     
     # Display current simulation results
     if st.session_state.current_simulation_data:
         impact_data = st.session_state.current_simulation_data["impact_data"]
         summary_stats = st.session_state.current_simulation_data["summary_stats"]
         years_simulated = st.session_state.current_simulation_data["years_simulated"]
+        
+        # Show update notification if dashboard was just updated
+        if st.session_state.dashboard_update_needed:
+            st.markdown(
+                """
+                <div class="success-notification">
+                    <strong>Dashboard Updated!</strong> New simulation results are now displayed below. 
+                    You can ask me questions about the current data or run additional simulations.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.session_state.dashboard_update_needed = False
         
         # Display metrics
         col1, col2, col3, col4 = st.columns(4)
@@ -360,7 +393,7 @@ def main():
         st.markdown(
             """
             <div class="simulation-status">
-                <h3>🚀 Ready to Run Simulations</h3>
+                <h3>Ready to Run Simulations</h3>
                 <p>No simulation data available yet. Use the chat below or quick buttons in the sidebar to run your first simulation!</p>
             </div>
             """,
@@ -373,24 +406,7 @@ def main():
         unsafe_allow_html=True,
     )
     
-    # Instructions for users
-    st.markdown(
-        """
-        <div class="chat-instructions">
-            <h3>💬 How to Use the Simulation Chat</h3>
-            <div class="instruction-item">
-                <strong>🔬 Run Simulations:</strong> Ask me to "run a simulation for X years" (e.g., "Run a simulation for 25 years")
-            </div>
-            <div class="instruction-item">
-                <strong>📊 Analyze Results:</strong> Ask questions about the current simulation data and trends
-            </div>
-            <div class="instruction-item">
-                <strong>💡 Get Insights:</strong> Request analysis of investment opportunities, technology rankings, or strategic recommendations
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+   
     
     # Display chat history
     for message in st.session_state.simulation_messages:
@@ -411,20 +427,28 @@ def main():
             with st.spinner("Processing your request..."):
                 result = workflow.process_user_input(user_input, st.session_state.current_context)
                 
-                # Update session state if simulation was run
-                if result["simulation_results"]:
-                    st.session_state.current_simulation_data = result["simulation_results"]
-                    # Trigger rerun to update dashboard
-                    st.rerun()
-                
+                # Always update context
                 st.session_state.current_context = result["context_summary"]
                 
-                # Display response
+                # Display response first
                 st.markdown(result["response"])
                 
                 # Add assistant response to history
                 st.session_state.simulation_messages.append({"role": "assistant", "content": result["response"]})
-
+                
+                # Update session state if simulation was run
+                if result["simulation_results"]:
+                    st.session_state.current_simulation_data = result["simulation_results"]
+                    st.session_state.dashboard_update_needed = True
+                    
+                    # Add a follow-up message about dashboard update
+                    #dashboard_update_msg = "Dashboard Updated! The charts and data above now reflect your new simulation results. Feel free to ask me questions about the current data!"
+                    #st.markdown(dashboard_update_msg)
+                    #st.session_state.simulation_messages.append({"role": "assistant", "content": dashboard_update_msg})
+                    
+                    # Trigger rerun to update dashboard
+                    #time.sleep(0.1)  # Small delay to ensure message is rendered
+                    st.rerun()
 
 if __name__ == "__main__":
     main()

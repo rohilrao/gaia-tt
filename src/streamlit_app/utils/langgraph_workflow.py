@@ -199,18 +199,69 @@ class NuclearSimulationWorkflow:
         user_query = state["user_query"]
         context = state.get("context_summary", "No simulation data available.")
         
+        # Include actual simulation data if available
+        simulation_data_context = ""
+        if state.get("simulation_results"):
+            results = state["simulation_results"]
+            impact_data = results["impact_data"]
+            
+            # Get top technologies by maximum impact
+            tech_max_impacts = {}
+            for tech, yearly_data in impact_data.items():
+                if yearly_data:
+                    tech_max_impacts[tech] = max(yearly_data.values())
+            
+            top_techs = sorted(tech_max_impacts.items(), key=lambda x: x[1], reverse=True)[:10]
+            
+            # Get technologies with impact in specific years
+            current_year = 2025
+            end_year = 2025 + results["years_simulated"] - 1
+            
+            current_opportunities = []
+            future_opportunities = []
+            
+            for tech, yearly_data in impact_data.items():
+                if yearly_data.get(current_year, 0) > 0:
+                    current_opportunities.append((tech, yearly_data[current_year]))
+                if yearly_data.get(end_year, 0) > 0:
+                    future_opportunities.append((tech, yearly_data[end_year]))
+            
+            current_opportunities.sort(key=lambda x: x[1], reverse=True)
+            future_opportunities.sort(key=lambda x: x[1], reverse=True)
+            
+            simulation_data_context = f"""
+            
+DETAILED SIMULATION DATA:
+- Simulation period: {current_year} to {end_year} ({results["years_simulated"]} years)
+- Summary: {results["summary_stats"]}
+
+TOP 10 TECHNOLOGIES BY MAXIMUM IMPACT:
+{chr(10).join([f"- {tech}: {impact:.2f} TWh" for tech, impact in top_techs[:10]])}
+
+CURRENT YEAR ({current_year}) OPPORTUNITIES (Top 5):
+{chr(10).join([f"- {tech}: {impact:.2f} TWh" for tech, impact in current_opportunities[:5]]) if current_opportunities else "- No opportunities available"}
+
+FINAL YEAR ({end_year}) OPPORTUNITIES (Top 5):
+{chr(10).join([f"- {tech}: {impact:.2f} TWh" for tech, impact in future_opportunities[:5]]) if future_opportunities else "- No opportunities available"}
+            """
+        
         qa_prompt = f"""
         You are an expert assistant helping users understand nuclear technology 
         acceleration simulation results. Answer the user's question based on the 
-        current simulation context.
+        current simulation context and detailed data provided.
         
         Current simulation context: {context}
+        {simulation_data_context}
         
         User question: "{user_query}"
         
-        Provide a helpful, detailed answer. If you need more specific data to answer 
-        the question properly, suggest that the user run a new simulation or ask 
-        for specific details.
+        Provide a helpful, detailed answer using the specific data above. When referencing 
+        technologies or numbers, use the actual data provided. If you need more specific 
+        data to answer the question properly, suggest that the user run a new simulation 
+        or ask for specific details.
+        
+        Keep your response conversational and informative, avoiding overly technical jargon.
+        Include specific technology names and impact values when relevant to the question.
         """
         
         try:
@@ -237,36 +288,41 @@ class NuclearSimulationWorkflow:
     
     def _format_response(self, state: SimulationState) -> SimulationState:
         """Format the final response based on the action taken."""
-        if state["simulation_request"]["intent"] == "simulation":
+        current_intent = state["simulation_request"]["intent"]
+        
+        if current_intent == "simulation":
             if state["simulation_results"]:
                 years = state["simulation_results"]["years_simulated"]
                 stats = state["simulation_results"]["summary_stats"]
                 
                 response = f"""
-## Simulation Complete! 
+## Simulation Complete
 
-I've successfully run a **{years}-year simulation** of nuclear technology acceleration impacts.
+I've successfully run a {years}-year simulation of nuclear technology acceleration impacts.
 
 ### Key Results:
-- **{stats['total_techs']}** technologies analyzed
-- **{stats['active_techs']}** technologies with positive impact potential
-- **{stats['max_impact']:.1f} TWh** maximum single-year impact
-- **{stats['current_opportunities']}** investment opportunities available in 2025
+- {stats['total_techs']} technologies analyzed
+- {stats['active_techs']} technologies with positive impact potential
+- {stats['max_impact']:.1f} TWh maximum single-year impact
+- {stats['current_opportunities']} investment opportunities available in 2025
 
-The dashboard above has been updated with these new results. You can now explore the heatmap and analyze the data in detail.
+### What's Next:
+The dashboard above will be updated with these new results. Once updated, you can:
 
-### What you can explore:
-- Use the heatmap to identify high-impact technologies by year
-- Adjust the minimum impact threshold in the sidebar
-- Select specific years to see detailed investment opportunities
-- Ask me follow-up questions about the results!
+- Explore the heatmap to identify high-impact technologies by year
+- Adjust filters in the sidebar to focus on specific impact thresholds
+- Select specific years to see detailed investment opportunities for {2025 + years - 1}
 
-*Would you like me to highlight any specific insights from this simulation?*
+### Follow-up Questions:
+- "What are the top 5 technologies for {2025 + min(5, years)}?"
+- "Which technologies show the most growth potential over the {years}-year period?"
+
+The dashboard is updating now with your new simulation data spanning {2025} to {2025 + years - 1}.
                 """.strip()
             else:
-                response = "Sorry, there was an error running the simulation. Please try again or contact support if the issue persists."
+                response = "❌ Sorry, there was an error running the simulation. Please try again or contact support if the issue persists."
         else:
-            # For questions, the response is already in state["response"]
+            # For questions, use the response from _answer_question
             response = state.get("response", "Sorry, I couldn't process your question.")
         
         state["response"] = response
