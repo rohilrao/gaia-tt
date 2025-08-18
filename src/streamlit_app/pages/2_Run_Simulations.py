@@ -1,6 +1,6 @@
 """
-Run Simulations page for the Nuclear Investment Analyzer.
-This page allows users to run custom simulations via chat and view dynamic results.
+Enhanced Run Simulations page for the Nuclear Investment Analyzer.
+This page provides complete data context to the AI chat for accurate question answering.
 """
 
 import streamlit as st
@@ -206,6 +206,14 @@ def main():
                 margin: 1rem 0;
                 border-left: 4px solid #28a745;
             }
+            .data-context-info {
+                background-color: #e1f5fe;
+                border: 1px solid #0288d1;
+                border-radius: 8px;
+                padding: 1rem;
+                margin: 1rem 0;
+                border-left: 4px solid #0288d1;
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -219,7 +227,8 @@ def main():
     st.markdown(
         """
         This page provides an **interactive simulation environment** where you can run custom 
-        nuclear technology simulations and get real-time analysis through AI-powered chat.
+        nuclear technology simulations and get real-time analysis through AI-powered chat with 
+        **complete access to all simulation data**.
         """
     )
     
@@ -228,6 +237,8 @@ def main():
         st.session_state.current_simulation_data = None
     if "current_context" not in st.session_state:
         st.session_state.current_context = "No simulation has been run yet. Ask me to run a simulation!"
+    if "complete_data_context" not in st.session_state:
+        st.session_state.complete_data_context = ""
     if "simulation_messages" not in st.session_state:
         st.session_state.simulation_messages = []
     if "dashboard_update_needed" not in st.session_state:
@@ -289,6 +300,19 @@ def main():
         
         if st.button("Run 40-Year Simulation", use_container_width=True):
             st.session_state.quick_simulation_request = "Run a simulation for 40 years"
+        
+        # Data context indicator
+        if st.session_state.complete_data_context:
+            st.markdown(
+                """
+                <div class="data-context-info">
+                    <strong>🔍 Complete Data Access</strong><br>
+                    The AI has access to all raw simulation data, tech tree details, 
+                    and dashboard plotting data for accurate question answering.
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     
     # Handle quick simulation requests
     if "quick_simulation_request" in st.session_state:
@@ -299,10 +323,15 @@ def main():
         st.session_state.simulation_messages.append({"role": "user", "content": user_input})
         
         with st.spinner("Running simulation..."):
-            result = workflow.process_user_input(user_input, st.session_state.current_context)
+            result = workflow.process_user_input(
+                user_input, 
+                st.session_state.current_context,
+                st.session_state.complete_data_context
+            )
             
             # Update session state and context
             st.session_state.current_context = result["context_summary"]
+            st.session_state.complete_data_context = result["complete_data_context"]
             
             # Add assistant response to history
             st.session_state.simulation_messages.append({"role": "assistant", "content": result["response"]})
@@ -327,7 +356,7 @@ def main():
                 """
                 <div class="success-notification">
                     <strong>Dashboard Updated!</strong> New simulation results are now displayed below. 
-                    You can ask me questions about the current data or run additional simulations.
+                    The AI chat now has complete access to all raw data for detailed question answering.
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -406,7 +435,46 @@ def main():
         unsafe_allow_html=True,
     )
     
-   
+    # Enhanced chat instructions
+    if st.session_state.complete_data_context:
+        st.markdown(
+            """
+            <div class="chat-instructions">
+                <h4>🤖 Enhanced AI Assistant with Complete Data Access</h4>
+                <p>The AI now has access to:</p>
+                <div class="instruction-item">
+                    <strong>📊 Complete Raw Data:</strong> All impact values by technology and year
+                </div>
+                <div class="instruction-item">
+                    <strong>🔬 Technology Details:</strong> Full tech tree with descriptions, categories, dependencies, investment requirements
+                </div>
+                <div class="instruction-item">
+                    <strong>📈 Development Status:</strong> Progress percentages, development timelines, investment tracking
+                </div>
+                <div class="instruction-item">
+                    <strong>🎯 Dashboard Data:</strong> Exact data used in visualizations and rankings
+                </div>
+                <p><strong>Try asking:</strong> "What's the exact impact of Thorium MSRs in 2035?" or "Which technology requires the least investment but has high impact?"</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            """
+            <div class="chat-instructions">
+                <h4>🤖 AI-Powered Simulation Assistant</h4>
+                <p>Ask me to run simulations or get help with the interface:</p>
+                <div class="instruction-item">
+                    <strong>🔬 Run Simulations:</strong> "Run a 30-year simulation" or "Simulate for 25 years"
+                </div>
+                <div class="instruction-item">
+                    <strong>❓ Ask Questions:</strong> After running a simulation, I'll have complete data access
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     
     # Display chat history
     for message in st.session_state.simulation_messages:
@@ -414,7 +482,12 @@ def main():
             st.markdown(message["content"])
     
     # Chat input
-    user_input = st.chat_input("Ask me to run a simulation or answer questions about the results...")
+    if st.session_state.complete_data_context:
+        placeholder_text = "Ask detailed questions about the simulation data, technologies, or request new simulations..."
+    else:
+        placeholder_text = "Ask me to run a simulation or answer questions about the results..."
+    
+    user_input = st.chat_input(placeholder_text)
     
     if user_input:
         # Add user message to history
@@ -425,10 +498,15 @@ def main():
         # Process through workflow
         with st.chat_message("assistant"):
             with st.spinner("Processing your request..."):
-                result = workflow.process_user_input(user_input, st.session_state.current_context)
+                result = workflow.process_user_input(
+                    user_input, 
+                    st.session_state.current_context,
+                    st.session_state.complete_data_context
+                )
                 
                 # Always update context
                 st.session_state.current_context = result["context_summary"]
+                st.session_state.complete_data_context = result["complete_data_context"]
                 
                 # Display response first
                 st.markdown(result["response"])
@@ -441,14 +519,9 @@ def main():
                     st.session_state.current_simulation_data = result["simulation_results"]
                     st.session_state.dashboard_update_needed = True
                     
-                    # Add a follow-up message about dashboard update
-                    #dashboard_update_msg = "Dashboard Updated! The charts and data above now reflect your new simulation results. Feel free to ask me questions about the current data!"
-                    #st.markdown(dashboard_update_msg)
-                    #st.session_state.simulation_messages.append({"role": "assistant", "content": dashboard_update_msg})
-                    
                     # Trigger rerun to update dashboard
-                    #time.sleep(0.1)  # Small delay to ensure message is rendered
                     st.rerun()
+
 
 if __name__ == "__main__":
     main()
