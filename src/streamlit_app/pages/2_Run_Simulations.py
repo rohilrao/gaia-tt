@@ -306,7 +306,7 @@ def main():
             st.markdown(
                 """
                 <div class="data-context-info">
-                    <strong>🔍 Complete Data Access</strong><br>
+                    <strong>Complete Data Access</strong><br>
                     The AI has access to all raw simulation data, tech tree details, 
                     and dashboard plotting data for accurate question answering.
                 </div>
@@ -429,52 +429,7 @@ def main():
             unsafe_allow_html=True
         )
     
-    # Interactive Chat Section
-    st.markdown(
-        '<div class="section-header">AI-Powered Simulation Chat</div>',
-        unsafe_allow_html=True,
-    )
-    
-    # Enhanced chat instructions
-    if st.session_state.complete_data_context:
-        st.markdown(
-            """
-            <div class="chat-instructions">
-                <h4>🤖 Enhanced AI Assistant with Complete Data Access</h4>
-                <p>The AI now has access to:</p>
-                <div class="instruction-item">
-                    <strong>📊 Complete Raw Data:</strong> All impact values by technology and year
-                </div>
-                <div class="instruction-item">
-                    <strong>🔬 Technology Details:</strong> Full tech tree with descriptions, categories, dependencies, investment requirements
-                </div>
-                <div class="instruction-item">
-                    <strong>📈 Development Status:</strong> Progress percentages, development timelines, investment tracking
-                </div>
-                <div class="instruction-item">
-                    <strong>🎯 Dashboard Data:</strong> Exact data used in visualizations and rankings
-                </div>
-                <p><strong>Try asking:</strong> "What's the exact impact of Thorium MSRs in 2035?" or "Which technology requires the least investment but has high impact?"</p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown(
-            """
-            <div class="chat-instructions">
-                <h4>🤖 AI-Powered Simulation Assistant</h4>
-                <p>Ask me to run simulations or get help with the interface:</p>
-                <div class="instruction-item">
-                    <strong>🔬 Run Simulations:</strong> "Run a 30-year simulation" or "Simulate for 25 years"
-                </div>
-                <div class="instruction-item">
-                    <strong>❓ Ask Questions:</strong> After running a simulation, I'll have complete data access
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+   
     
     # Display chat history
     for message in st.session_state.simulation_messages:

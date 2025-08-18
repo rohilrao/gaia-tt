@@ -388,24 +388,17 @@ IMPORTANT NOTES FOR ANALYSIS:
 I've successfully run a {years}-year simulation of nuclear technology acceleration impacts.
 
 ### Key Results:
-- {stats['total_techs']} technologies analyzed
 - {stats['active_techs']} technologies with positive impact potential
 - {stats['max_impact']:.1f} TWh maximum single-year impact
 - {stats['current_opportunities']} investment opportunities available in 2025
 
 ### What's Next:
-The dashboard above will be updated with these new results. Once updated, you can:
-
 - Explore the heatmap to identify high-impact technologies by year
 - Adjust filters in the sidebar to focus on specific impact thresholds
-- Select specific years to see detailed investment opportunities for {2025 + years - 1}
 
 ### Follow-up Questions You Can Ask:
 - "What are the top 5 technologies by total impact?"
-- "Which technologies have the highest impact in 2030?"
-- "What's the development status of [specific technology]?"
-- "Which technologies show the most growth potential?"
-- "What are the investment requirements for the top technologies?"
+- "Which technology shows the most growth potential?"
 
 The dashboard is now updated with your new simulation data spanning {2025} to {2025 + years - 1}. 
 I have complete access to all the raw data, so feel free to ask detailed questions!
