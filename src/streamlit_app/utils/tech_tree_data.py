@@ -46,7 +46,10 @@ tech_tree = {
           {"id": "tech_rad_hard_electronics", "label": "Enabling Tech: Radiation-Hardened Electronics", "type": "EnablingTechnology", "trl_current": "3-7 (Application Dependent)"},
           {"id": "tech_plasma_heating", "label": "Enabling Tech: Plasma Heating Systems", "type": "EnablingTechnology", "trl_current": "5-6"},
           {"id": "tech_divertor_concepts", "label": "Enabling Tech: Advanced Divertor Concepts", "type": "EnablingTechnology", "trl_current": "2-3"},
-          {"id": "milestone_advanced_divertor_test", "label": "Milestone: Advanced Divertor Test Facility (DTT)", "type": "Milestone", "subtype": "ComponentTest", "trl_current": "3"}
+          {"id": "milestone_advanced_divertor_test", "label": "Milestone: Advanced Divertor Test Facility (DTT)", "type": "Milestone", "subtype": "ComponentTest", "trl_current": "3"},
+          {"id": "tech_long_term_waste_disposal", "label": "Enabling Tech: Deep Geological Repository", "type": "EnablingTechnology", "category": "Fission", "trl_current": "7-8"},
+          {"id": "milestone_advanced_reactor_licensing_framework", "label": "Milestone: Advanced Reactor Licensing Framework","type": "Milestone","subtype": "Regulatory","trl_current": "5-6","trl_projected_5_10_years": "8"
+},
         ],
         "edges": [
           {"id": "dep_lts_physics_to_iter", "source": "milestone_lts_physics_validation", "target": "milestone_iter_construction"},
@@ -86,7 +89,12 @@ tech_tree = {
           {"id": "dep_passive_safety_to_fission", "source": "tech_passive_safety", "targets": ["concept_lwr_smr", "concept_htgr", "concept_msr", "concept_sfr", "concept_lfr"]},
           {"id": "dep_rad_hard_to_all", "source": "tech_rad_hard_electronics", "targets": ["concept_lts_tokamak", "concept_hts_tokamak", "concept_stellarator", "concept_frc", "concept_icf", "concept_z_pinch", "concept_lwr_smr", "concept_htgr", "concept_msr", "concept_sfr", "concept_lfr", "concept_twr"]},
           {"id": "dep_plasma_heating_to_mcf", "source": "tech_plasma_heating", "targets": ["concept_lts_tokamak", "concept_hts_tokamak", "concept_stellarator", "concept_frc"]},
-          {"id": "dep_ai_ml_to_all", "source": "tech_ai_ml_control", "targets": ["concept_lts_tokamak", "concept_hts_tokamak", "concept_stellarator", "concept_frc", "concept_icf", "concept_z_pinch", "concept_lwr_smr", "concept_htgr", "concept_msr", "concept_sfr", "concept_lfr", "concept_twr"]}
+          {"id": "dep_ai_ml_to_all", "source": "tech_ai_ml_control", "targets": ["concept_lts_tokamak", "concept_hts_tokamak", "concept_stellarator", "concept_frc", "concept_icf", "concept_z_pinch", "concept_lwr_smr", "concept_htgr", "concept_msr", "concept_sfr", "concept_lfr", "concept_twr"]},
+          {"id": "dep_waste_disposal_to_fission","source": "tech_long_term_waste_disposal","targets": ["concept_lwr_smr","concept_htgr","concept_msr","concept_sfr","concept_lfr","concept_twr"]},
+          {"id": "dep_adv_licensing_to_adv_fission","source": "milestone_advanced_reactor_licensing_framework","targets": [ "concept_htgr", "concept_msr", "concept_sfr", "concept_lfr", "concept_twr"
+  ]
+}
+
         ]
       }
     }
